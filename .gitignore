@@ -37,11 +37,6 @@ datasets/
 *.tar
 *.tar.gz
 
-# Model training artifacts
-checkpoints/
-outputs/
-results/
-
 # System files
 .DS_Store
 Thumbs.db
