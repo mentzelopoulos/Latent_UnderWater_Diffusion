@@ -1,0 +1,47 @@
+## Train images & models
+*.jpg
+*.jpeg
+*.JPG
+*.JPEG
+*.pth
+*.pt
+
+# Python cache / compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# VSCode / IDE settings
+.vscode/
+.idea/
+
+# Logs and outputs
+*.log
+logs/
+runs/       # If using TensorBoard
+
+# Datasets (adjust if needed)
+data/
+dataset/
+datasets/
+*.zip
+*.tar
+*.tar.gz
+
+# Model training artifacts
+checkpoints/
+outputs/
+results/
+
+# System files
+.DS_Store
+Thumbs.db
