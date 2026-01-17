@@ -17,10 +17,13 @@ import torch.nn.functional as F
 import random
 from matplotlib import pyplot as plt
 
+# Device for autocast
+autocast_device = "cuda" if torch.cuda.is_available() else "cpu"
+
 #################################### Synthetic Corruption (simulating underwater challenges) ##############
 
 @torch.no_grad()
-def corrupt_individually(x: torch.tensor, **args):
+def corrupt_individually(x: torch.Tensor, **args):
     assert x.ndim == 4 and x.shape[1] == 3 # Batched pixel space
     B, C, H, W = x.shape
     corrupted_images = []
@@ -29,18 +32,19 @@ def corrupt_individually(x: torch.tensor, **args):
         corrupted_images.append(corrupt_fast(img, **args).squeeze())
     return torch.stack(corrupted_images)
 
-@torch.cuda.amp.autocast()
+@torch.amp.autocast(device_type=autocast_device)
 @torch.no_grad()
-def corrupt_fast(image: torch. tensor, device="cuda", add_bubbles: bool = True, num_bubbles: int = 100, max_bubble_size: int = 4, max_bubble_intensity: float =0.77,
+def corrupt_fast(image: torch.Tensor, device="cuda", add_bubbles: bool = True, num_bubbles: int = 100, max_bubble_size: int = 4, max_bubble_intensity: float =0.77,
             haze_intensity=None, p_haze: float = 0.75, p_color: float = 0.75, noise_mean: float = 0.0, noise_std: float = 0.05, color_shift_max: float = 0.15, motion_blur:bool = True, p_blur:float = 0.8,
             blur_kernel_size: list[int] =[4, 8, 16, 32, 64], blur_sigma: float = 5.0, vignetting_intensity: float = 0.2,
             apply_inpainting: bool = True, p_inpainting: float = 0.3):
 
-    ## Expectes batched tensor of images
+    ## Expects batched tensor of images (B, C, H, W)
 
     if image.ndim != 4:
-        print(image.ndim)
-    assert image.ndim == 4 and image.shape[1] == 3, "Expected Batched tensor of images"
+        raise ValueError(f"Expected 4D tensor (batched images), got {image.ndim}D tensor with shape {image.shape}")
+    if image.shape[1] != 3:
+        raise ValueError(f"Expected 3 channels (RGB), got {image.shape[1]} channels in tensor with shape {image.shape}")
     
     image = image.to(device) if torch.cuda.is_available() else image.cpu()
     batch_size, channels, height, width = image.shape
@@ -120,6 +124,7 @@ def corrupt_fast(image: torch. tensor, device="cuda", add_bubbles: bool = True, 
 
     # --- Blending with original clean image ---
     # Create a binary mask of random patches (1 = corrupted, 0 = keep original)
+    """
     num_patches = torch.randint(5, 15, (1,)).item()  # choose how many patches per image
     corruption_mask = torch.zeros((batch_size, 1, height, width), device=device)
 
@@ -140,10 +145,11 @@ def corrupt_fast(image: torch. tensor, device="cuda", add_bubbles: bool = True, 
     #plt.imshow(image.squeeze().detach().cpu().numpy().transpose(1,2,0))
     #plt.show()
     #assert False if torch.randn(1) > 2.5 else True
+    """
     
     return image.float().cpu()
 
-def blend(image: torch.tensor, clean_image:torch.tensor, min_frac = 0.15, max_frac = 0.6):
+def blend(image: torch.Tensor, clean_image: torch.Tensor, min_frac = 0.15, max_frac = 0.6):
     
     num_patches = torch.randint(5, 15, (1,)).item()
     for _ in range(num_patches):
@@ -163,7 +169,7 @@ def blend(image: torch.tensor, clean_image:torch.tensor, min_frac = 0.15, max_fr
 ##################################### Individual Corruptions (below) #####################################
 
 @torch.no_grad()
-def add_haze(image: torch.tensor, intensity=None):
+def add_haze(image: torch.Tensor, intensity=None):
     """
     Simulate haze/fog effect by blending the image with a gray layer.
     intensity: float, strength of the haze (0=no haze, 1=full haze)
@@ -174,7 +180,7 @@ def add_haze(image: torch.tensor, intensity=None):
     return (1 - intensity) * image + intensity * haze
 
 @torch.no_grad()
-def add_gaussian_noise(image: torch.tensor, mean=0.0, std=0.05):
+def add_gaussian_noise(image: torch.Tensor, mean=0.0, std=0.05):
     """
     Add Gaussian noise to the image.
     mean: mean of noise
@@ -218,7 +224,7 @@ def add_motion_blur(image:torch.tensor, kernel_size: int =8, sigma: float =5.0):
     return torch.clamp(blurred_image[:, :, :-1, :-1], 0.0, 1.0)
 
 @torch.no_grad()
-def add_vignetting(image: torch.tensor, intensity:float = 0.2):
+def add_vignetting(image: torch.Tensor, intensity:float = 0.2):
     """
     Darken edges of the image to simulate lens vignetting.
     intensity: strength of the effect
@@ -232,7 +238,7 @@ def add_vignetting(image: torch.tensor, intensity:float = 0.2):
     return image * vignette_mask
 
 @torch.no_grad()
-def add_bubbles(image: torch.tensor, num_bubbles: int = 100, max_size: int =4, max_intensity: float = 0.77):
+def add_bubbles(image: torch.Tensor, num_bubbles: int = 100, max_size: int =4, max_intensity: float = 0.77):
     """
     Add white circular bubbles at random positions.
     num_bubbles: max number of bubbles per image
@@ -262,7 +268,7 @@ def darken(image:torch.tensor):
     return torch.clamp(image * gamma, 0.0, 1.0)
 
 @torch.no_grad()
-def corrupt(image: torch.tensor, device: str ="cuda"):
+def corrupt(image: torch.Tensor, device: str ="cuda"):
     """
     Apply a full sequence of image corruptions.
     Moves image to device, then applies:

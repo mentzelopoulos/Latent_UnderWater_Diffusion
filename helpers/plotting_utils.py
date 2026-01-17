@@ -16,7 +16,7 @@ import torch
 from matplotlib import pyplot as plt
 
 @torch.no_grad()
-def plot_image(x: torch.tensor, title=None):
+def plot_image(x: torch.Tensor, title=None):
     assert x.ndim == 4 or x.ndim == 3, f"Expected tensor with three dimensions (unbatched) or four dimensions (batched), received {x.ndim}"
     plt.imshow(x.squeeze().detach().cpu().permute(1, 2, 0), interpolation="LANCZOS")
     plt.axis('off')

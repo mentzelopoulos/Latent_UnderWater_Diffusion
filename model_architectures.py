@@ -18,7 +18,7 @@ import torch.nn as nn
 from helpers.diffusion_utils_conditional import linear_beta_schedule, cosine_beta_schedule
 
 class UnconditionalUNet(nn.Module):
-    def __init__(self, dim: int = 128, dim_mults = (1,2,4), channels: int = 4, beta_t: torch.tensor = cosine_beta_schedule(timesteps = 1000), timesteps = 1000):
+    def __init__(self, dim: int = 128, dim_mults = (1,2,4), channels: int = 4, beta_t: torch.Tensor = cosine_beta_schedule(timesteps = 1000), timesteps = 1000):
         super().__init__()
 
         ## Diffusion hyper-params
@@ -44,7 +44,7 @@ class UnconditionalUNet(nn.Module):
 
 
 class ConditionalUNet(nn.Module):
-    def __init__(self, dim: int = 64, dim_mults = (1,2,4,8), channels: int = 4, image_size = (512//8, 768//8), num_classes = 1, beta_t: torch.tensor = cosine_beta_schedule(timesteps = 1000), timesteps = 1000):
+    def __init__(self, dim: int = 64, dim_mults = (1,2,4,8), channels: int = 4, image_size = (512//8, 768//8), num_classes = 1, beta_t: torch.Tensor = cosine_beta_schedule(timesteps = 1000), timesteps = 1000):
         super().__init__()
 
         ## Diffusion hyper-params

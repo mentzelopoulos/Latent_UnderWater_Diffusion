@@ -38,7 +38,7 @@ def load_model_and_test_loader(
     ):
     
     ## Load ema model
-    checkpoint = torch.load(checkpoint_path, map_location="cpu")
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     if "ema_params" in checkpoint:
         model.load_state_dict(checkpoint['ema_params'], strict=strict)
         print(f"Model updated with EMA parameters, loaded with strict = {strict}")
@@ -60,7 +60,7 @@ def load_model_and_test_loader(
     return 
 
 @torch.no_grad()
-@torch.cuda.amp.autocast()
+@torch.amp.autocast(device_type='cuda' if torch.cuda.is_available() else 'cpu')
 def generate_unconditional(
     model: nn.Module,
     autoencoder: nn.Module,
@@ -123,11 +123,11 @@ def generate_unconditional(
 
 
 @torch.no_grad()
-@torch.cuda.amp.autocast()
+@torch.amp.autocast(device_type='cuda' if torch.cuda.is_available() else 'cpu')
 def generate_conditional(
     model: nn.Module,
     autoencoder: nn.Module,
-    corrupted_img: torch.tensor = None,
+    corrupted_img: torch.Tensor = None,
     total_timesteps:int = 1000, 
     quick: bool = False,
     quick_inference_steps: int = 50,
@@ -192,7 +192,7 @@ def generate_conditional(
 ############################### Helpers
 
 @torch.no_grad()
-def save_image_to_folder(image: torch.tensor, save_image_path = "./results/generated_images/", is_nn: bool = False, index: int = None):
+def save_image_to_folder(image: torch.Tensor, save_image_path = "./results/generated_images/", is_nn: bool = False, index: int = None):
     tosave_img = image.squeeze().detach().cpu().numpy().transpose(1,2,0)
     tosave_img = (tosave_img*255).astype('uint8')
     tosave_img = Image.fromarray(tosave_img)
@@ -201,7 +201,7 @@ def save_image_to_folder(image: torch.tensor, save_image_path = "./results/gener
     tosave_img.save(save_name)
 
 @torch.no_grad()
-def find_closest_sample(image: torch.tensor, train_imageDataset: imageDataset):
+def find_closest_sample(image: torch.Tensor, train_imageDataset: imageDataset):
 
     assert image.ndim == 3 or (image.ndim == 4 and image.shape[0] == 1), "Please provide a single image"
     assert image.shape[0] == 3 or image.shape[1] == 3, "Please provide 3 channel image in pixel space"

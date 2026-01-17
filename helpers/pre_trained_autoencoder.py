@@ -15,7 +15,8 @@ For permission requests, contact: Andreas Mentzelopoulos, ament@mit.edu.
 import torch
 from diffusers import AutoencoderKL
 
-device =torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device =torch.device("cuda" if torch.cuda.is_available() else "cpu")
+autocast_device = "cuda" if torch.cuda.is_available() else "cpu"
 
 def load_autoencoder(
     model_name: str = "CompVis/stable-diffusion-v1-4",
@@ -45,13 +46,13 @@ def load_autoencoder(
 
 
 @torch.no_grad()          # no gradients needed
-@torch.cuda.amp.autocast()  # use mixed precision
-def encode(images: torch.tensor, autoencoder, batch_size: int = 16, scale_factor: float = 0.18215, to_cpu: bool = True):
+@torch.amp.autocast(device_type=autocast_device)  # use mixed precision
+def encode(images: torch.Tensor, autoencoder, batch_size: int = 16, scale_factor: float = 0.18215, to_cpu: bool = True):
     """
     Encode images into latents with VQ-GAN from Stable Diffusion.
 
     Args:
-        images (B,3,H,W): torch.tensor in [0,1]
+        images (B,3,H,W): torch.Tensor in [0,1]
         autoencoder: model with .encode()
         batch_size: split encoding to avoid OOM
         scale_factor: latent scaling (e.g. 0.18215)
@@ -72,8 +73,8 @@ def encode(images: torch.tensor, autoencoder, batch_size: int = 16, scale_factor
 
 
 @torch.no_grad()            # no gradients needed
-@torch.cuda.amp.autocast()  # use mixed precision
-def decode(z: torch.tensor, autoencoder, batch_size: int = 16, scale_factor:float = 0.18215, to_cpu=True):
+@torch.amp.autocast(device_type=autocast_device)  # use mixed precision
+def decode(z: torch.Tensor, autoencoder, batch_size: int = 16, scale_factor:float = 0.18215, to_cpu=True):
     """
     Decode latents into images with an autoencoder.
 

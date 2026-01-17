@@ -27,6 +27,7 @@ from helpers.pre_trained_autoencoder import encode
 
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
+autocast_device = "cuda" if torch.cuda.is_available() else "cpu"
 
 ## Read data from folder
 @torch.no_grad()
@@ -36,11 +37,12 @@ def read_data(root_dir: str = "images", H: int = 512, W: int = 768, seed: int = 
 
     Args:
         root_dir (str): path to image directory (subfolders = classes)
-        H (int): output image height
-        W (int): output image width
+        H (int): output image height [Standard: 512]
+        W (int): output image width [Standard: 768]
         seed (int): random seed for reproducibility
-        test_split (float): fraction of images to use for test set
-
+        test_split (float): fraction of images to use for test set [Standard: 0.1 for 10% test set]
+        no_split (bool): whether to split data into train/test [Standard: False]
+        
     Returns:
         train_images (list[torch.Tensor]): C x H x W images
         train_labels (list[int]): class labels
@@ -154,7 +156,7 @@ def read_data(root_dir: str = "images", H: int = 512, W: int = 768, seed: int = 
 
 ## Latent Dataset
 class latentDataset(Dataset):
-    def __init__(self, conditions: torch.tensor, targets: torch.tensor, classes: torch.tensor, raw_latents: torch.tensor = None):
+    def __init__(self, conditions: torch.Tensor, targets: torch.Tensor, classes: torch.Tensor, raw_latents: torch.Tensor = None):
         super().__init__()
         if raw_latents is not None:
             self.raw_latents = raw_latents
@@ -178,8 +180,8 @@ def save_latentDataset(
     compressed: bool = False
 ):
     data = {
-        "conditions": LatentDataset.conditions.half() if half_precision else LatentDataset.conditions.half(),
-        "targets": LatentDataset.targets.half() if half_precision else LatentDataset.targets.half(),
+        "conditions": LatentDataset.conditions.half() if half_precision else LatentDataset.conditions.float(),
+        "targets": LatentDataset.targets.half() if half_precision else LatentDataset.targets.float(),
         "classes": LatentDataset.classes,
     }
     if hasattr(LatentDataset, "raw_latents") and LatentDataset.raw_latents is not None:
@@ -223,7 +225,7 @@ def load_latentDataset(save_name: str = "train_latentDataset", save_path: str = 
     
 ## Image Dataset
 class imageDataset(Dataset):
-    def __init__(self, images: list[torch.tensor], classes: torch.tensor):
+    def __init__(self, images: list[torch.Tensor], classes: torch.Tensor):
         super().__init__()
         self.images = images
         self.classes = classes
@@ -349,7 +351,7 @@ def beautify_batch(batch: torch.Tensor) -> torch.Tensor:
     return batch.cpu()
 
 @torch.no_grad()
-@torch.cuda.amp.autocast()
+@torch.amp.autocast(device_type=autocast_device)
 def build_latentDataset(
     ImageDataset: imageDataset,              
     autoencoder,

@@ -31,6 +31,7 @@ from helpers.artificial_corruption_utils import corrupt_fast
 from helpers.pre_trained_autoencoder import encode
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
+autocast_device = "cuda" if torch.cuda.is_available() else "cpu"
 
 ############# Custom LR Scheduler 
 
@@ -93,7 +94,7 @@ def read_checkpoint(
     """
     
     if os.path.exists(checkpoint_path):
-        checkpoint = torch.load(checkpoint_path, map_location="cpu")
+        checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
         epoch_start = checkpoint['epoch']
         model.load_state_dict(checkpoint['model_state_dict'], strict=False)
         print("Model state_dict loaded")
@@ -218,7 +219,7 @@ def write_checkpoint(epoch: int, model: nn.Module, optimizer, ema_params: dict, 
 ################# Update Dataloader
 
 @torch.no_grad()
-@torch.cuda.amp.autocast()
+@torch.amp.autocast(device_type=autocast_device)
 def update_dataloader(train_loader, train_imageDataset, autoencoder, N=200, beautify=True, num_augmentations_per_image=1):
     """
     Update a subset of a LatentDataset inside a DataLoader by re-encoding images.
@@ -264,7 +265,7 @@ def update_dataloader(train_loader, train_imageDataset, autoencoder, N=200, beau
 ########################## Sample and Save
 
 @torch.no_grad()
-def sample_and_save_images(model, epoch, corrupted_img: torch.tensor = None, num_samples = 8, save_location = "./results/Training_samples/"):
+def sample_and_save_images(model, epoch, corrupted_img: torch.Tensor = None, num_samples = 8, save_location = "./results/Training_samples/"):
 
     save_dir = save_location + f'{epoch}'
     os.makedirs(save_dir, exist_ok=True)
