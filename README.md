@@ -1,19 +1,24 @@
-# Latent Underwater Diffusion
+# LOBSTgER-enhance
 
-A PyTorch implementation of a latent diffusion model for underwater image restoration and enhancement, using velocity parameterization and classifier-free guidance.
+Official pytorch implementation of LOBSTgER-enhance: an image-to-image latent diffusion model for underwater image restoration and enhancement. LOBSTgER-enhance is part of the LOBSTgER (Learning Oceanic Bioecological Systems Through gEnerative Representations) project, led by Andreas Mentzelopoulos, PhD (ML) & Keith Ellenbogen (data collection/field photography).
+
+![Examples of Image Enhancement](readmeImages/LOBSTgER_samples.PNG)
+
+Publication: TBD
 
 ## Overview
 
-This project implements a state-of-the-art diffusion model for processing underwater images. The model operates in a latent space using a pre-trained VAE (from Stable Diffusion), enabling efficient training and inference. The implementation includes:
+Implementation of an underwater image-enhancement pipeline leveraging diffusion-based generation in the latent space of a pre-trained VAE. The model operates in the latent space of "Stable Diffusion"'s VQ-GAN, enabling efficient training and inference. The implementation includes (from a technical standpoint):
 
-- **Latent Diffusion**: Training in compressed latent space for efficiency
-- **Velocity Parameterization**: Using v-prediction for improved training stability
-- **Classifier-Free Guidance**: For conditional image generation
+- **Latent Diffusion**: Training in a compressed latent space for efficiency
+- **Velocity Parameterization**: Optimization based on "v-prediction" for improved training stability
+- **Classifier-Free Guidance**: For generation guidance, and possibly unconditional generation (if you have enough data).
 - **DDPM & DDIM Sampling**: Both full and fast sampling modes
 - **Conditional Generation**: Image-to-image restoration from corrupted inputs
 
 ## Features
 
+- ✅ Flexible image dimensions (H, W)
 - ✅ Latent space diffusion (8x compression)
 - ✅ Velocity parameterization (v-prediction)
 - ✅ Classifier-free guidance for conditional generation
@@ -47,6 +52,9 @@ pip install denoising-diffusion-pytorch
 ```
 Latent_UnderWater_Diffusion/
 ├── train_model.py              # Main training script
+├── train_model.ipynb           # Training notebook
+├── prep_data.py                # Data preparation script
+├── prep_data.ipynb             # Data preparation notebook
 ├── model_architectures.py      # UNet model definitions
 ├── helpers/
 │   ├── diffusion_utils_conditional.py  # DDPM/DDIM sampling, velocity parameterization
@@ -58,10 +66,14 @@ Latent_UnderWater_Diffusion/
 │   └── plotting_utils.py       # Visualization utilities
 ├── images/                     # Training data directory
 │   ├── Favorites/              # Class folders for images
-│   └── data_checkpoints/        # Preprocessed dataset checkpoints
+│   ├── Rest/                   # Class folder for images
+│   └── data_checkpoints/       # Preprocessed dataset checkpoints
+├── test_images/                # Test images for inference
+│   ├── Test_category_1/        # Test set category 1
+│   └── Test_category_2/        # Test set category 2
 ├── model_checkpoints/          # Saved model checkpoints
 ├── results/                    # Training logs and generated images
-└── Inference.ipynb            # Inference notebook
+└── Inference.ipynb             # Inference notebook
 ```
 
 ## Usage
@@ -109,52 +121,26 @@ python train_model.py \
 
 ### Data Preparation
 
-1. **Organize Images**: Place training images in `images/` directory with subdirectories for different classes:
+1. **Organize Images**: Place training images in `images/` in the two provided subdirectories. Favorites highest quality images, and Rest all other images:
    ```
    images/
    ├── Favorites/    # Class 0
    └── Rest/         # Class 1
    ```
 
-2. **Preprocess Data**: Use `process_training_data.ipynb` to:
-   - Load and preprocess images
-   - Encode images to latent space using VAE
+2. **Preprocess Data** (Do it ONCE only!): Use `prep_data.py` or `prep_data.ipynb` to:
+   - Load and preprocess images from `images/` 
+   - Encode images to latent space using the VAE
    - Create corrupted/clean pairs for training
-   - Save preprocessed datasets
+   - Save the preprocessed latent dataset to `images/data_checkpoints/`
+
+   Run the script:
+   ```bash
+   python prep_data.py
+   ```
+   Optional arguments: `--H` (default 512), `--W` (default 768), `--batch_size` (default 32).
 
 ### Inference
-
-#### Using Python
-
-```python
-from helpers.inference_utils import load_model_and_test_loader, generate_conditional, generate_unconditional
-from helpers.pre_trained_autoencoder import load_autoencoder
-from model_architectures import ConditionalUNet
-
-# Load model and autoencoder
-model = ConditionalUNet(dim=128, dim_mults=(1,2)).eval().to("cuda")
-test_loader = load_model_and_test_loader(model, checkpoint_path="model_checkpoints/demo_model.pth")
-autoencoder = load_autoencoder(half_precision=True)
-
-# Generate unconditional samples
-generate_unconditional(
-    model=model,
-    autoencoder=autoencoder,
-    num_samples=16,
-    quick=True,  # Use DDIM for faster sampling
-    quick_inference_steps=50
-)
-
-# Generate conditional samples (restoration)
-generate_conditional(
-    model=model,
-    autoencoder=autoencoder,
-    corrupted_img=corrupted_images,  # Your corrupted input images
-    quick=True,
-    cfg=True,  # Use classifier-free guidance
-    cfg_scale=2.5
-)
-```
 
 #### Using Notebook
 
@@ -163,7 +149,7 @@ See `Inference.ipynb` for interactive inference examples.
 ## Model Architecture
 
 - **Backbone**: U-Net from `denoising-diffusion-pytorch`
-- **Input**: Latent representations (4 channels, 8x downsampled)
+- **Input**: Latent representations and conditions,  (4 channels, 8x downsampled)
 - **Conditioning**: Concatenated condition latents (for conditional generation)
 - **Output**: Velocity prediction (v-parameterization)
 

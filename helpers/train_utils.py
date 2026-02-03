@@ -38,7 +38,7 @@ autocast_device = "cuda" if torch.cuda.is_available() else "cpu"
 def flat_then_decay_w_warmup(optimizer, num_epochs, flat_until = 0.9 , warmup_steps=250):
 
     flat_steps = int(flat_until * num_epochs)
-    decay_steps = num_epochs - flat_steps
+    decay_steps = max(1, num_epochs - flat_steps)
     
     def lr_lambda(step):
         if step < warmup_steps:
@@ -233,6 +233,7 @@ def update_dataloader(train_loader, train_imageDataset, autoencoder, N=200, beau
         num_augmentations_per_image: number of augmentations per sample
     """
     dataset = train_loader.dataset
+    N = min(N, len(dataset))
     indices = random.sample(range(len(dataset)), N)  # pick N unique indices
 
     for i in tqdm(indices, desc=f"Updating {N} Samples"):

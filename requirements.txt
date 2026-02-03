@@ -1,0 +1,18 @@
+# LOBSTgER-enhance – Latent Underwater Diffusion
+# Core dependencies only. Install: pip install -r requirements.txt
+
+# Training & model
+torch==2.9.0
+torchvision==0.24.0
+denoising-diffusion-pytorch==2.2.5
+
+# VAE (Stable Diffusion)
+diffusers==0.35.2
+
+# Data & I/O
+numpy==2.0.1
+pillow==12.0.0
+
+# Training loop & viz
+tqdm==4.67.1
+matplotlib==3.10.7

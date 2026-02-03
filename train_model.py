@@ -113,7 +113,7 @@ def main(args=None):
     total_timesteps = args.total_timesteps
     learning_rate = args.learning_rate
     beta_t = cosine_beta_schedule(total_timesteps) # Variance Schedule, cosine or linear
-    cfg_dropout = args.cfg_dropout
+    cfg_dropout = np.clip(args.cfg_dropout, 0, 1)
     ema_decay = args.ema_decay
     mixed_precision = args.mixed_precision
 
@@ -238,7 +238,7 @@ def main(args=None):
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                 optimizer.step()
 
-            if epoch > 10:
+            if epoch > 5:
                 update_ema(model=model, ema_params=ema_params, ema_decay=ema_decay)
             train_losses.append(loss.item())  # Store the original loss
 

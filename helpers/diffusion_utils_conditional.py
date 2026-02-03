@@ -59,9 +59,9 @@ def sample_t(TOTAL_TIMESTEPS: int, batch_targets: torch.Tensor, bad_data:bool = 
     
     t = torch.empty(batch_targets.shape[0], dtype=torch.long, device=device)
     is_bad = (batch_classes == 1)
-    t[is_bad] = torch.randint(         # Sample t for bad class from [0, bad_class_time_fraction * TOTAL_TIMESTEPS)
-        0, int(bad_class_time_fraction * TOTAL_TIMESTEPS), (is_bad.sum(),), device=device
-    )
+    bad_high = max(1, int(bad_class_time_fraction * TOTAL_TIMESTEPS))  # randint(0, 0, ...) is invalid
+    t[is_bad] = torch.randint(0, bad_high, (is_bad.sum(),), device=device)
+    
     t[~is_bad] = torch.randint( # Sample t for good class from [0, TOTAL_TIMESTEPS)
         0, TOTAL_TIMESTEPS, ((~is_bad).sum(),), device=device
     )
