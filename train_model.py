@@ -6,8 +6,9 @@ This code is the exclusive property of Andreas Mentzelopoulos
 All associated materials (data, models, scripts) are the
 exclusive property of Andreas Mentzelopoulos and LOBSTgER.
 
-No part of this code may be copied, distributed, modified, or used in any
-form without the prior written consent of Andreas Mentzelopoulos.
+This code may be used openly and freely for research and education purposes. 
+No part of this code may be used, copied, distributed, or modified for commercial use, 
+without the prior written consent of Andreas Mentzelopoulos.
 
 For permission requests, contact: Andreas Mentzelopoulos, ament@mit.edu.
 """
@@ -80,6 +81,8 @@ def parse_args():
                        help='Model dimension (default: 128)')
     parser.add_argument('--dim-mults', type=str, default='1,2',
                        help='Dimension multipliers as comma-separated list (default: 1,2)')
+    parser.add_argument('--image-size', type=str, default='512,768',
+                       help='Image size as comma-separated list (default: 512,768)')
     
     # Scheduler settings
     parser.add_argument('--scheduler-flat-until', type=float, default=0.4,
@@ -107,7 +110,7 @@ def main(args=None):
 
     ## Parse dim_mults from string to tuple
     dim_mults = tuple(int(x) for x in args.dim_mults.split(','))
-
+    H, W = int(args.image_size.split(',')[0]), int(args.image_size.split(',')[1])
     ## Diffusion hyperparameters
     num_epochs = args.num_epochs
     total_timesteps = args.total_timesteps
@@ -169,7 +172,8 @@ def main(args=None):
         dim=args.model_dim, 
         dim_mults=dim_mults, 
         beta_t=beta_t, 
-        timesteps=total_timesteps
+        timesteps=total_timesteps,
+        image_size=(H//8, W//8)
     ).to(device)
     optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
     scheduler = flat_then_decay_w_warmup(
@@ -193,6 +197,13 @@ def main(args=None):
         checkpoint_path=f"model_checkpoints/{model_name}.pth"
     )
     log_print(f"Resuming at epoch: {epoch_start}")
+
+    if train_loader is None:
+        raise RuntimeError(
+            "Train loader is None. Ensure the latent dataset exists at the expected path "
+            "(e.g. images/data_checkpoints/train_latentDataset.pt or .pt.gz) and contains "
+            "'conditions', 'targets', 'classes', and 'raw_latents'."
+        )
 
     # Training Loop
     model.train()

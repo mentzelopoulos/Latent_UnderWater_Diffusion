@@ -6,8 +6,9 @@ This code is the exclusive property of Andreas Mentzelopoulos
 All associated materials (data, models, scripts) are the
 exclusive property of Andreas Mentzelopoulos and LOBSTgER.
 
-No part of this code may be copied, distributed, modified, or used in any
-form without the prior written consent of Andreas Mentzelopoulos.
+This code may be used openly and freely for research and education purposes. 
+No part of this code may be used, copied, distributed, or modified for commercial use, 
+without the prior written consent of Andreas Mentzelopoulos.
 
 For permission requests, contact: Andreas Mentzelopoulos, ament@mit.edu.
 """
@@ -147,9 +148,6 @@ def reverse_sample_ddim(model, x, x_c, t, t_next, guidance = False, cfg_scale = 
 
     return x_next
 
-
-
-
 @torch.no_grad()
 @torch.amp.autocast(device_type=autocast_device)
 def sample(model, autoencoder, corrupted_img=None, num_samples=16, channels=4, quick=False, num_timesteps=50, total_timesteps=1000, cfg_guidance=False, cfg_scale=3):
@@ -186,7 +184,6 @@ def sample(model, autoencoder, corrupted_img=None, num_samples=16, channels=4, q
                 img = reverse_sample_ddim(model, img, x_c, t_batch, t_next_batch)
             else:
                 img = reverse_sample_ddim(model, img, x_c, t_batch, t_next_batch, guidance = True, cfg_scale=cfg_scale)
-
             imgs.append(img.cpu())
-
+    
     return imgs
